@@ -34,7 +34,9 @@ enum {
   CLIENT_STATE_CONNECT,
   CLIENT_STATE_WAIT_CONNECT_RESPONSE,
   CLIENT_STATE_CLOSE_SOCKET,
-  CLIENT_STATE_WAIT_CLOSE_SOCKET
+  CLIENT_STATE_WAIT_CLOSE_SOCKET,
+  CLIENT_STATE_SET_NO_DELAY,
+  CLIENT_STATE_WAIT_SET_NO_DELAY_RESPONSE
 };
 
 GSMClient::GSMClient(bool synch) :
@@ -159,7 +161,8 @@ int GSMClient::ready()
         ready = 0;
       } else {
         _connected = true;
-        _state = CLIENT_STATE_IDLE;
+        //_state = CLIENT_STATE_IDLE;
+        _state = CLIENT_STATE_SET_NO_DELAY;
       }
       break;
     }
@@ -176,6 +179,24 @@ int GSMClient::ready()
     case CLIENT_STATE_WAIT_CLOSE_SOCKET: {
       _state = CLIENT_STATE_IDLE;
       _socket = -1;
+      break;
+    }
+
+    case CLIENT_STATE_SET_NO_DELAY: {
+
+      MODEM.sendf("AT+USOSO=%d,6,1,1", _socket);
+
+      _state = CLIENT_STATE_WAIT_SET_NO_DELAY_RESPONSE;
+      ready = 0;
+
+      break;
+    }
+
+    case CLIENT_STATE_WAIT_SET_NO_DELAY_RESPONSE: {
+
+      _state = CLIENT_STATE_IDLE;
+      ready = 0;
+
       break;
     }
   }
